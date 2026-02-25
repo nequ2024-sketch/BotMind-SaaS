@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000';
+// 🔴 التعديل الأول: وضع رابط السيرفر الحقيقي على Render
+const API_URL = 'https://botmind-saas.onrender.com';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -43,8 +44,15 @@ export default function App() {
       const res = await axios.post(`${API_URL}${endpoint}`, { email, password });
       setToken(res.data.access_token);
       localStorage.setItem('token', res.data.access_token);
+      // في المستقبل، خذي الـ ID من الرد الحقيقي بدل تثبيته
       setUserId(1); 
+      localStorage.setItem('userId', 1);
     } catch (err) { alert("تأكد من البيانات ❌"); }
+  };
+
+  // 🔴 التعديل الثاني: دالة ربط الإنستغرام
+  const handleInstagramLogin = () => {
+    window.location.href = `${API_URL}/auth/instagram/login`;
   };
 
   const toggleBot = async () => {
@@ -175,11 +183,12 @@ export default function App() {
           <h1 style={styles.brandTitle}>BotMind AI</h1>
         </div>
         <form onSubmit={handleAuth} style={styles.form}>
-          <input type="email" placeholder="App/page inbox" style={styles.loginInput} onChange={e => setEmail(e.target.value)} required />
-          <input type="password" placeholder="Password / Secret" style={styles.loginInput} onChange={e => setPassword(e.target.value)} required />
-          <button type="submit" style={styles.loginSubmit}>Login</button>
+          <input type="email" placeholder="Email" style={styles.loginInput} onChange={e => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Password" style={styles.loginInput} onChange={e => setPassword(e.target.value)} required />
+          <button type="submit" style={styles.loginSubmit}>{isLoginMode ? 'Login' : 'Register'}</button>
           <div style={styles.divider}><span>أو</span></div>
-          <button type="button" style={styles.igLogin}>Login with Instagram</button>
+          {/* 🔴 التعديل الثالث: إضافة حدث onClick للزر */}
+          <button type="button" onClick={handleInstagramLogin} style={styles.igLogin}>Login with Instagram</button>
         </form>
         <p style={{color: '#888', cursor: 'pointer', marginTop: '20px'}} onClick={() => setIsLoginMode(!isLoginMode)}>
           {isLoginMode ? 'أنشئ حساباً جديداً' : 'لديك حساب؟ سجل دخولك'}
