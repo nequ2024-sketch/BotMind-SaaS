@@ -9,6 +9,7 @@ from models.users import User
 from models.ai_agents import AIAgent
 from models.products import Product
 
+# ربط مفتاح جوجل جيميناي
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-pro')
 
@@ -27,16 +28,21 @@ async def process_delayed_reply(text: str, target_id: str, user_id: int):
     wait_time = (target_time - datetime.utcnow()).total_seconds()
     await asyncio.sleep(wait_time)
 
-    db = SessionLocal()
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    agent_persona = "مساعد بشري ودود"
-    if user and user.selected_agent_id:
-        agent = db.query(AIAgent).filter(AIAgent.id == user.selected_agent_id).first()
-        if agent: agent_persona = f"{agent.name}، وأسلوبك هو: {agent.persona}"
-    
-    store_products = db.query(Product).filter(Product.user_id == user_id).all()
-    db.close()
+    try:
+        db = SessionLocal()
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        agent_persona = "مساعد بشري ودود"
+        if user and user.selected_agent_id:
+            agent = db.query(AIAgent).filter(AIAgent.id == user.selected_agent_id).first()
+            if agent: agent_persona = f"{agent.name}، وأسلوبك هو: {agent.persona}"
+        
+        store_products = db.query(Product).filter(Product.user_id == user_id).all()
+        db.close()
+    except Exception as e:
+        print(f"Database error: {e}")
+        agent_persona = "مساعد بشري ودود"
+        store_products = []
 
     system_prompt = f"أنت لست روبوت، أنت {agent_persona}. تتفاعل مع المتابعين على إنستغرام بلطف."
     
@@ -51,7 +57,8 @@ async def process_delayed_reply(text: str, target_id: str, user_id: int):
     try:
         response = model.generate_content(prompt)
         reply = response.text
-    except:
+    except Exception as e:
+        print(f"Gemini AI Error: {e}")
         reply = "يا هلا فيك! تواصل معنا لأي استفسار ✨"
 
     await send_instagram_message(target_id, reply)
