@@ -3,64 +3,81 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from dotenv import load_dotenv
 
-# تحميل ملف .env في حال التشغيل المحلي
+# تحميل المتغيرات من ملف .env في بيئة التطوير المحلية
 load_dotenv()
 
 class Settings(BaseSettings):
     """
-    إعدادات مشروع BotMind AI - التكوين الشامل لجيش الـ 1000 روبوت
+    هذا الكلاس مسؤول عن قراءة جميع المفاتيح السرية والإعدادات
+    الخاصة بمشروع BotMind AI. إذا كان هناك مفتاح ناقص في سيرفر Render،
+    سيقوم هذا الكلاس بإيقاف التشغيل وتنبيهك فوراً لحماية النظام.
     """
     
-    # --- إعدادات قاعدة البيانات والأمان ---
-    # إذا كنت على Render، سيقرأ الرابط من البيئة، وإلا سيستخدم SQLite محلياً
+    # ==========================================
+    # إعدادات الأمان وقاعدة البيانات
+    # ==========================================
     DATABASE_URL: str = Field(
         default="sqlite:///./botmind_database.db", 
-        env="DATABASE_URL"
+        env="DATABASE_URL",
+        description="رابط الاتصال بقاعدة البيانات"
     )
     JWT_SECRET_KEY: str = Field(
-        default="09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7", 
-        env="JWT_SECRET_KEY"
+        default="botmind_super_secret_key_2026_nexus_unbreakable", 
+        env="JWT_SECRET_KEY",
+        description="المفتاح السري لتشفير جلسات المستخدمين"
     )
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # أسبوع واحد
 
-    # --- إعدادات الروابط (Frontend & Backend) ---
+    # ==========================================
+    # إعدادات الروابط (Frontend & Backend)
+    # ==========================================
     FRONTEND_URL: str = Field(
         default="https://bot-mind-saa-s.vercel.app", 
         env="FRONTEND_URL"
     )
     
-    # --- إعدادات الذكاء الاصطناعي (Gemini) ---
-    # هذا المفتاح هو "مخ" الـ 1000 روبوت
-    GEMINI_API_KEY: str = Field(default="", env="GEMINI_API_KEY")
+    # ==========================================
+    # الذكاء الاصطناعي (مخ النظام - Gemini)
+    # ==========================================
+    GEMINI_API_KEY: str = Field(
+        default="", 
+        env="GEMINI_API_KEY",
+        description="مفتاح جوجل للذكاء الاصطناعي"
+    )
     
-    # --- إعدادات الدفع (Stripe) ---
-    # لتحصيل الدولارات وتفعيل الاشتراكات الاحترافية
-    STRIPE_SECRET_KEY: str = Field(default="", env="STRIPE_SECRET_KEY")
-    STRIPE_PRICE_ID: str = Field(default="", env="STRIPE_PRICE_ID")
-    STRIPE_WEBHOOK_SECRET: str = Field(default="", env="STRIPE_WEBHOOK_SECRET")
+    # ==========================================
+    # بوابات الدفع (Stripe)
+    # ==========================================
+    STRIPE_SECRET_KEY: str = Field(
+        default="", 
+        env="STRIPE_SECRET_KEY",
+        description="المفتاح السري الخاص بـ Stripe لمعالجة الدفعيات"
+    )
+    STRIPE_WEBHOOK_SECRET: str = Field(
+        default="", 
+        env="STRIPE_WEBHOOK_SECRET",
+        description="لتأكيد عمليات الدفع الناجحة تلقائياً من Stripe"
+    )
 
-    # --- إعدادات ميتا وإنستغرام (Meta API) ---
-    # لربط السيرفر بحسابات التواصل الاجتماعي
-    IG_ACCESS_TOKEN: str = Field(default="", env="IG_ACCESS_TOKEN")
-    # هذا التوكن يجب أن يتطابق مع ما تضعه في صفحة Facebook Developers
+    # ==========================================
+    # إعدادات ميتا وإنستغرام (Meta API)
+    # ==========================================
+    IG_ACCESS_TOKEN: str = Field(
+        default="", 
+        env="IG_ACCESS_TOKEN",
+        description="توكن الوصول الطويل الأمد لصفحة إنستغرام"
+    )
     META_VERIFY_TOKEN: str = Field(
         default="botmind_webhook_secret_123", 
-        env="META_VERIFY_TOKEN"
+        env="META_VERIFY_TOKEN",
+        description="كلمة السر التي سيتأكد منها فيسبوك عند ربط الويب هوك"
     )
-    APP_ID: str = "1634584007740054" # رقم تطبيقك المعتمد
+    APP_ID: str = "1634584007740054" 
 
     class Config:
-        # البحث عن ملف .env تلقائياً
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
 
-# تصدير نسخة واحدة من الإعدادات لاستخدامها في كل مكان
+# تصدير نسخة واحدة ليتم استخدامها في باقي الملفات
 settings = Settings()
-
-# طباعة تنبيه بسيطة عند تشغيل السيرفر للتأكد من حالة المفاتيح الأساسية
-if not settings.GEMINI_API_KEY:
-    print("⚠️ تحذير: GEMINI_API_KEY غير موجود! الروبوتات لن تستطيع الرد.")
-if not settings.STRIPE_SECRET_KEY:
-    print("⚠️ تحذير: STRIPE_SECRET_KEY غير موجود! الدفع لن يعمل.")
